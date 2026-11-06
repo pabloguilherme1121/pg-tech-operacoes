@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const source=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+function boot(saved,blocked=false){const nodes=new Map();const node=()=>({innerHTML:'',value:'',dataset:{},addEventListener(){},setAttribute(){},textContent:''});const document={querySelector(s){if(s==='#storage-warning')return nodes.get(s);if(!nodes.has(s))nodes.set(s,node());return nodes.get(s)},querySelectorAll(){return []},createElement:node,body:{prepend(n){nodes.set('#'+n.id,n)}}};const ctx=vm.createContext({document,localStorage:{getItem(){return saved},setItem(){if(blocked)throw Error('quota')}},fp:{value:''},ft:{value:''},fq:{value:''},fs:{value:''}});vm.runInContext(source,ctx);return {ctx,nodes};}
+test('JSON inválido e estruturas inesperadas não derrubam o painel',()=>{for(const saved of ['{','true','[]','{}','{"records":null,"history":1,"checks":{}}']){const {ctx}=boot(saved);assert.equal(vm.runInContext('data.records.length',ctx),0);}});
+test('falha ao salvar mantém dados em memória e apresenta aviso',()=>{const {ctx,nodes}=boot(null,true);vm.runInContext("data.history.push({date:'hoje',msg:'teste'});save()",ctx);assert.equal(vm.runInContext('data.history.length',ctx),1);assert.match(nodes.get('#storage-warning').textContent,/exporte/);});
+test('registro válido é preservado e URL executável é rejeitada',()=>{const good={id:'abc',projeto:'PG Bot',tipo:'Teste',prioridade:'P2',estado:'pendente',descricao:'Teste',date:'hoje',url:'https://example.com'};const {ctx}=boot(JSON.stringify({records:[good,{...good,id:'bad',url:'javascript:alert(1)'}],history:[],checks:[true,false]}));assert.equal(vm.runInContext('data.records.length',ctx),1);assert.equal(vm.runInContext('data.records[0].id',ctx),'abc');});
