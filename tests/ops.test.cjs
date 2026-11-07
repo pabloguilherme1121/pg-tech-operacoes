@@ -40,3 +40,35 @@ test('prioridade adulterada não pode inserir atributos HTML em um cartão',()=>
  assert.doesNotMatch(view.records,/<script|<img/i);
  assert.match(view.records,/Registro íntegro/);
 });
+
+
+function submitSample(url){
+ const map=new Map(),warnings=[];
+ function element(selector){
+  if(!map.has(selector))map.set(selector,{innerHTML:'',value:'',events:{},
+   addEventListener(name,handler){this.events[name]=handler},reset(){}});
+  return map.get(selector);
+ }
+ const context={document:{querySelector:element,querySelectorAll(){return []}},
+  fp:element('#fp'),ft:element('#ft'),fq:element('#fq'),fs:element('#fs'),
+  localStorage:{getItem(){return null},setItem(){}},
+  Date,Math,URL,Blob,console,alert(msg){warnings.push(msg)},confirm(){return false},
+  FormData:class{constructor(){return new Map([
+   ['projeto','PG Bot'],['tipo','CI'],['prioridade','P1'],
+   ['estado','comprovado'],['descricao','Prova de QA'],['url',url]
+  ])}}
+ };
+ runInNewContext(source,context,{timeout:2000});
+ element('#form').events.submit({preventDefault(){},target:{reset(){}}});
+ return {html:element('#registros').innerHTML,warnings};
+}
+test('estado comprovado exige URL completa e sem credenciais, não apenas prefixo https',()=>{
+ for(const url of ['https://','https://usuario:senha@example.com']){
+  const result=submitSample(url);
+  assert.match(result.html,/Nenhum registro/,url);
+  assert.ok(result.warnings.length>0,url);
+ }
+ const valid=submitSample('https://github.com/exemplo/acoes/runs/123');
+ assert.match(valid.html,/Prova de QA/);
+ assert.match(valid.html,/href="https:\/\/github\.com\/exemplo\/acoes\/runs\/123"/);
+});
