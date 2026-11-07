@@ -56,3 +56,45 @@ Os tamanhos abaixo representam a soma aproximada dos arquivos HTML/CSS/JS/TS do 
 
 - Eleições Goiás 2026: https://github.com/pabloguilherme1121/eleicoes-goias-2026/pull/15
 - Central de Operações: esta PR, aberta como rascunho para validação.
+
+## Aprofundamento de código e QA em navegadores, 06/11/2026
+
+Esta é uma atualização do inventário anterior. Os testes foram executados em checkouts limpos no Windows 11 com Node 24.19.0, e os testes de interface foram isolados em HTTP local. Isso não comprova deploy ou teste em Android físico.
+
+### Cuidador(a)
+
+- Defeito confirmado: POST /api/rooms com corpo JSON null lançava TypeError em cloudflare/worker.mjs, em vez de retornar HTTP 400. Teste RED reproduziu o defeito.
+- Correção mínima: validar objeto não nulo e rejeitar arrays antes de acessar id, authHash e readHash. Teste GREEN incluído no teste existente de API.
+- npm run build passou com 73 testes da aplicação e 5 testes de publicação; npm audit encontrou 0 vulnerabilidades.
+- PR em rascunho: https://github.com/pabloguilherme1121/Cuidador-a-/pull/49. Run 42314853357 de qualidade e segurança na HEAD consultada: success.
+- Pendente: Android físico, notificações em segundo plano, infraestrutura e confirmação de publicação.
+
+### Eliane Fashion (dainty-horse-23162a)
+
+- Defeito confirmado: innerHTML interpretava HTML não escapado nos dados de stories, pedidos e cupons no admin demonstrativo. Três testes RED falharam.
+- Correção mínima: escape dos campos antes da interpolação. npm run check passou com 12 testes.
+- PR em rascunho: https://github.com/pabloguilherme1121/dainty-horse-23162a/pull/6. Run 42315038212 na HEAD consultada: success.
+- Bloqueio antes de operação real: admin.html é demonstrativo, publica senha admin123 e mantém o estado em localStorage; não é autenticação server-side.
+
+### PG Bot Homologação
+
+- Versão inspecionada: 3b60f54. 37 testes Node anteriores permanecem aprovados.
+- Teste HTTP local em Chromium, Firefox e WebKit, 320 e 390 px, com fixtures da API pública GitHub: 6/6 cenários passaram sem overflow ou erros JS; exibição de 3 projetos, 4 PRs e 3 runs simulados.
+- Teste adicional entre duas abas de mesma origem em Chromium: conflito detectado e sobrescrita impedida, aprovado. Total adicional: 7/7 cenários de navegador.
+- Esses testes não executam motores de jogo, não consultam estado real das PRs e não comprovam Android físico.
+
+### PG Tech Storefront
+
+- Orçamento de recursos: 593.936 bytes de imagens únicas de exibição (22 arquivos), 101.181 bytes de CSS e 138.478 bytes de JS. Não representa tráfego ou Core Web Vitals de produção.
+- Achado real em axe-core: label-content-name-mismatch no cabeçalho; texto visual PGTECH com seta decorativa não estava incluído de maneira correspondente no nome acessível (WCAG 2.5.3).
+- Correção da marca e teste RED/GREEN. npm run check passou com 120 testes e build; npm audit retornou 0 alertas.
+- PR em rascunho: https://github.com/pabloguilherme1121/pg-tech-storefront/pull/19. Run 42315933507 ainda em andamento no momento da consulta.
+- Playwright e axe em Chromium/Firefox/WebKit, 320/390 px: 6/6 verificações isoladas aprovadas, com contraste desativado nessa medição para separar o problema de nome acessível.
+- O WebKit apresentou contraste instável enquanto estilos carregavam em laboratório. A análise completa de contraste e WCAG AA permanece pendente.
+- Preparação comercial: 7 exemplos, 0 ofertas reais; dados cadastrais, horários e oferta autorizada ainda pendentes.
+
+### Sequência segura
+
+Revisar PRs #49, #6 e #19 na HEAD final; completar contraste em navegador real; impedir administração fictícia de ser tratada como produção; homologar Android físico para Cuidador(a) e PG Bot; medir LCP, CLS e INP das URLs efetivamente publicadas.
+
+Não houve merge nem deploy nesta rodada. Os demais repositórios preservam os resultados e as limitações da seção inicial.
