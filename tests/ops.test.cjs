@@ -31,3 +31,12 @@ test('links dos projetos apontam para repositórios efetivos',()=>{
  assert.match(view.projects,/pabloguilherme1121\/PG-Bot/);
  assert.match(view.projects,/pabloguilherme1121\/Cuidador-a-/);
 });
+
+test('prioridade adulterada não pode inserir atributos HTML em um cartão',()=>{
+ const suspect={id:'r-safe',projeto:'PG Bot',tipo:'QA',estado:'pendente',
+  prioridade:'P1" onmouseover="alert(1)',descricao:'Registro íntegro',date:'agora',url:''};
+ const view=launch({records:[suspect],history:[],checks:[]});
+ assert.doesNotMatch(view.records,/onmouseover\s*=/i);
+ assert.doesNotMatch(view.records,/<script|<img/i);
+ assert.match(view.records,/Registro íntegro/);
+});
