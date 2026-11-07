@@ -1,0 +1,74 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {readFileSync}=require('node:fs');
+const {runInNewContext}=require('node:vm');
+const source=readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
+function launch(saved){
+ const map=new Map();
+ function element(selector){
+  if(!map.has(selector))map.set(selector,{innerHTML:'',value:'',addEventListener(){},checked:false});
+  return map.get(selector);
+ }
+ const document={querySelector:element,querySelectorAll(){return []}};
+ const context={document,fp:element('#fp'),ft:element('#ft'),fq:element('#fq'),fs:element('#fs'),
+  localStorage:{getItem(){return saved===undefined?null:JSON.stringify(saved)},setItem(){}},
+  Date,Math,URL,Blob,console,alert(){},confirm(){return false}};
+ runInNewContext(source,context,{timeout:2000});
+ return {records:element('#registros').innerHTML,projects:element('#projetos').innerHTML};
+}
+test('registro armazenado não injeta HTML nem link javascript no painel',()=>{
+ const r={id:'"><img src=x onerror=alert(1)>',projeto:'PG Bot',tipo:'QA',estado:'pendente',prioridade:'P0',descricao:'Evidência',date:'hoje',url:'javascript:alert(1)'};
+ const screen=launch({records:[r],history:[],checks:[]});
+ assert.doesNotMatch(screen.records,/<img\b|javascript:/i);
+ assert.match(screen.records,/Evidência/);
+});
+test('dados locais incompletos não derrubam o painel',()=>{
+ const view=launch({records:null,history:null,checks:null});
+ assert.match(view.records,/Nenhum registro/);
+});
+test('links dos projetos apontam para repositórios efetivos',()=>{
+ const view=launch();
+ assert.match(view.projects,/pabloguilherme1121\/PG-Bot/);
+ assert.match(view.projects,/pabloguilherme1121\/Cuidador-a-/);
+});
+
+test('prioridade adulterada não pode inserir atributos HTML em um cartão',()=>{
+ const suspect={id:'r-safe',projeto:'PG Bot',tipo:'QA',estado:'pendente',
+  prioridade:'P1" onmouseover="alert(1)',descricao:'Registro íntegro',date:'agora',url:''};
+ const view=launch({records:[suspect],history:[],checks:[]});
+ assert.doesNotMatch(view.records,/<[^>]+\sonmouseover\s*=/i);
+ assert.doesNotMatch(view.records,/<script|<img/i);
+ assert.match(view.records,/Registro íntegro/);
+});
+
+
+function submitSample(url){
+ const map=new Map(),warnings=[];
+ function element(selector){
+  if(!map.has(selector))map.set(selector,{innerHTML:'',value:'',events:{},
+   addEventListener(name,handler){this.events[name]=handler},reset(){}});
+  return map.get(selector);
+ }
+ const context={document:{querySelector:element,querySelectorAll(){return []}},
+  fp:element('#fp'),ft:element('#ft'),fq:element('#fq'),fs:element('#fs'),
+  localStorage:{getItem(){return null},setItem(){}},
+  Date,Math,URL,Blob,console,alert(msg){warnings.push(msg)},confirm(){return false},
+  FormData:class{constructor(){return new Map([
+   ['projeto','PG Bot'],['tipo','CI'],['prioridade','P1'],
+   ['estado','comprovado'],['descricao','Prova de QA'],['url',url]
+  ])}}
+ };
+ runInNewContext(source,context,{timeout:2000});
+ element('#form').events.submit({preventDefault(){},target:{reset(){}}});
+ return {html:element('#registros').innerHTML,warnings};
+}
+test('estado comprovado exige URL completa e sem credenciais, não apenas prefixo https',()=>{
+ for(const url of ['https://','https://usuario:senha@example.com']){
+  const result=submitSample(url);
+  assert.match(result.html,/Nenhum registro/,url);
+  assert.ok(result.warnings.length>0,url);
+ }
+ const valid=submitSample('https://github.com/exemplo/acoes/runs/123');
+ assert.match(valid.html,/Prova de QA/);
+ assert.match(valid.html,/href="https:\/\/github\.com\/exemplo\/acoes\/runs\/123"/);
+});

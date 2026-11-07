@@ -1,0 +1,8 @@
+{
+  "name": "pg-tech-operacoes",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check app.js && npm test"
+  }
+}
