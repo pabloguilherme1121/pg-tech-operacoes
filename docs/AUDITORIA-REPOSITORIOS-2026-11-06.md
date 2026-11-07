@@ -88,7 +88,7 @@ Esta é uma atualização do inventário anterior. Os testes foram executados em
 - Orçamento de recursos: 593.936 bytes de imagens únicas de exibição (22 arquivos), 101.181 bytes de CSS e 138.478 bytes de JS. Não representa tráfego ou Core Web Vitals de produção.
 - Achado real em axe-core: label-content-name-mismatch no cabeçalho; texto visual PGTECH com seta decorativa não estava incluído de maneira correspondente no nome acessível (WCAG 2.5.3).
 - Correção da marca e teste RED/GREEN. npm run check passou com 120 testes e build; npm audit retornou 0 alertas.
-- PR em rascunho: https://github.com/pabloguilherme1121/pg-tech-storefront/pull/19. Run 42315933507 ainda em andamento no momento da consulta.
+- PR em rascunho: https://github.com/pabloguilherme1121/pg-tech-storefront/pull/19. Run 42315933507 concluído com success na HEAD após nova consulta. Continua sem comprovar deploy.
 - Playwright e axe em Chromium/Firefox/WebKit, 320/390 px: 6/6 verificações isoladas aprovadas, com contraste desativado nessa medição para separar o problema de nome acessível.
 - O WebKit apresentou contraste instável enquanto estilos carregavam em laboratório. A análise completa de contraste e WCAG AA permanece pendente.
 - Preparação comercial: 7 exemplos, 0 ofertas reais; dados cadastrais, horários e oferta autorizada ainda pendentes.
